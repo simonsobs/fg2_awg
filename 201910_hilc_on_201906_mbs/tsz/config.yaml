@@ -1,0 +1,23 @@
+inputs:
+        cmb: /project/projectdirs/sobs/v4_sims/mbs/201901_gaussian_fg_lensed_cmb_realistic_noise/4096/cmb/0000/simonsobs_*_uKCMB_la*.fits
+        tsz: /project/projectdirs/sobs/v4_sims/mbs/201905_extragalactic/4096/tsz/0000/simonsobs_*_uKCMB_la*.fits
+        ksz: /project/projectdirs/sobs/v4_sims/mbs/201905_extragalactic/4096/ksz/0000/simonsobs_*_uKCMB_la*.fits
+        cib: /project/projectdirs/sobs/v4_sims/mbs/201905_extragalactic/4096/cib/0000/simonsobs_*_uKCMB_la*.fits
+        dust: /project/projectdirs/sobs/v4_sims/mbs/201904_highres_foregrounds_equatorial/4096/dust/0000/simonsobs_*_uKCMB_la*.fits
+        synchrotron: /project/projectdirs/sobs/v4_sims/mbs/201904_highres_foregrounds_equatorial/4096/synchrotron/0000/simonsobs_*_uKCMB_la*.fits
+        freefree: /project/projectdirs/sobs/v4_sims/mbs/201904_highres_foregrounds_equatorial/4096/freefree/0000/simonsobs_*_uKCMB_la*.fits
+        ame: /project/projectdirs/sobs/v4_sims/mbs/201904_highres_foregrounds_equatorial/4096/ame/0000/simonsobs_*_uKCMB_la*.fits
+        noise: /global/cscratch1/sd/zonca/simonsobs/mapsims_runs/201906_noise_no_lowell/4096/noise/0000/simonsobs_*_uKCMB_la*.fits
+outputs: [tsz]
+weights:
+        gal_mask: /global/cscratch1/sd/krach/SObs/FGawg/masks/040619/4096/mask_equatorial_temperature_fsky0p70_freq145_ns4096.fits
+        hits_map: /global/homes/d/dpoletti/software_home/mapsims/mapsims/data/total_hits_LA_classical.fits.gz
+        rel_threshold: 0.1
+        apo_deg: 2
+        tag: t_fsky0p70_classical_thr0p1_apo2
+        lat_lim: [-65.0, 20.0]
+lmax: 8000
+delta_ell: 20
+workspace: workspace/cache
+outdir: workspace/test_output_tsz
+logging_level: INFO
