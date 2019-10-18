@@ -1,6 +1,6 @@
 inputs:
         cmb: /project/projectdirs/sobs/v4_sims/mbs/201901_gaussian_fg_lensed_cmb_realistic_noise/4096/cmb/0000/simonsobs_*_uKCMB_la*.fits
-        tsz: /project/projectdirs/sobs/v4_sims/mbs/201905_extragalactic/4096/tsz/0000/simonsobs_*_uKCMB_la*.fits
+   tsz: /project/projectdirs/sobs/v4_sims/mbs/201905_extragalactic/4096/tsz/0000/simonsobs_*_uKCMB_la*.fits
         ksz: /project/projectdirs/sobs/v4_sims/mbs/201905_extragalactic/4096/ksz/0000/simonsobs_*_uKCMB_la*.fits
         cib: /project/projectdirs/sobs/v4_sims/mbs/201905_extragalactic/4096/cib/0000/simonsobs_*_uKCMB_la*.fits
         dust: /project/projectdirs/sobs/v4_sims/mbs/201904_highres_foregrounds_equatorial/4096/dust/0000/simonsobs_*_uKCMB_la*.fits
@@ -19,5 +19,5 @@ weights:
 lmax: 8000
 delta_ell: 20
 workspace: workspace/cache
-outdir: workspace/test_output_cmb_tsz
+outdir: workspace/output_cmb_tsz
 logging_level: INFO

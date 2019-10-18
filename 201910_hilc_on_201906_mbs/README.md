@@ -3,7 +3,7 @@ Harmonic ILC on MBS Sept 2019
 
 ## Configuration
 
-See the `yaml` files and the follwoing sections.
+See the `yaml` files and the following sections.
 
 ### Harmonic ILC
 
@@ -13,38 +13,45 @@ following.
 
 1. Multiply the input frequency-maps by the weights map (see next section)
 2. Compute the pseudo-SH coefficients up to `lmax`
-3. Bin the multipoles in bins `delta_ell`-wide
+3. Bin the multipoles in `delta_ell`-wide bins
 4. For each bin, compute the frequency-frequency empirical covaraince matrix
 5. Use the (known) SEDs of the desired output compnents and the empirical
-   covariance matrices to build a bin-dependent unmixing matrix
-6. Apply the unmixing matrices to the pseudo-SH coefficients to get the
+   covariance matrices to build a bin-dependent un-mixing matrix
+6. Apply the un-mixing matrices to the pseudo-SH coefficients to get the
    pseudo-SH of the output components
 
 ### Wights Map
 
 We use uniform weights. We build a binary mask based on a galactic mask
-(`gal_mask`) and a hits map (`hits_map`,  masking pixels under `rel_threshold` times the maximum). A further latitude cut is applied. The binary mask is then apodized with a `apo_deg`-FWHM gaussian kernel.
+(`gal_mask`) and a hits map (`hits_map`,  masking pixels under
+`rel_threshold` times the maximum). A further latitude cut is applied.
+The binary mask is then apodized with a `apo_deg`-FWHM gaussian kernel 
 
 ### Inputs
 
 LAT map-based simulations
 
-Galactic (dust, synchrotron, AME, free-free): 
-Extra-galactic (cmb, tsz, ksz, cib): 
-Noise: 
+Galactic (dust, synchrotron, AME, free-free): `/project/projectdirs/sobs/v4_sims/mbs/201904_highres_foregrounds_equatorial/4096/*/0000/simonsobs_*_uKCMB_la*.fits`
+Extra-galactic (cmb, tsz, ksz, cib): `/project/projectdirs/sobs/v4_sims/mbs/201905_extragalactic/4096/*/0000/simonsobs_*_uKCMB_la*.fits`
+Noise: `/global/cscratch1/sd/zonca/simonsobs/mapsims_runs/201906_noise_no_lowell/4096/noise/0000/simonsobs_*_uKCMB_la*.fits`
 
 ### Outputs
 
-Three cases:
 - CMB
-- tSZ
 - CMB and tSZ
 
 Note that if multiple output components are requested their are orthogonalized
 with respect to each other.
 
-Output are available in the project dir at NERSC both as SH coefficients and as
-maps convolved with the LAT smallest beam: 0.9 arcmin
+Output are available at
+
+`/global/cscratch1/sd/dpoletti/analyses_home/so_analysis/fg_awg/draft_201909_hilc_on_201906_mbs`
+
+at NERSC both as SH coefficients and as
+maps convolved with the LAT smallest beam: 0.9 arcmin.
+
+As we agree on the correctness and the format of the output, we should probably
+move it to the project dir.
 
 ## Running codes on your own
 

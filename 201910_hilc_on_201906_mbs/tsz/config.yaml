@@ -19,5 +19,5 @@ weights:
 lmax: 8000
 delta_ell: 20
 workspace: workspace/cache
-outdir: workspace/test_output_tsz
+outdir: workspace/output_tsz
 logging_level: INFO
