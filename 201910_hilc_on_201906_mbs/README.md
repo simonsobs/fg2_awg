@@ -1,4 +1,4 @@
-Harmonic ILC on MBS Sept 2019
+Harmonic ILC on MBS Oct 2019
 -----------------------------
 
 ## Configuration
@@ -14,8 +14,8 @@ following.
 1. Multiply the input frequency-maps by the weights map (see next section)
 2. Compute the pseudo-SH coefficients up to `lmax`
 3. Bin the multipoles in `delta_ell`-wide bins
-4. For each bin, compute the frequency-frequency empirical covaraince matrix
-5. Use the (known) SEDs of the desired output compnents and the empirical
+4. For each bin, compute the frequency-frequency empirical covariance matrix
+5. Use the (known) SEDs of the desired output components and the empirical
    covariance matrices to build a bin-dependent un-mixing matrix
 6. Apply the un-mixing matrices to the pseudo-SH coefficients to get the
    pseudo-SH of the output components
@@ -72,6 +72,6 @@ ILC routines are in `fgbuster.separation_recipies`.
 
 ## Get in touch
 
-For any bug report, feature request, further explanation, please write to the `#fg_awg`
+For any bug report, feature request, further explanation, please write to the `#so_fg`
 Slack channel or open an issue.
 
