@@ -1,0 +1,26 @@
+inputs:
+  paths:
+    so_noise: /project/projectdirs/sobs/v4_sims/mbs/201906_noise_no_lowell/4096/noise/0000/simonsobs_*_uKCMB_la*.fits
+    so: /project/projectdirs/sobs/v4_sims/mbs/201906_highres_foregrounds_extragalactic_tophat/4096/*/0000/simonsobs_*_uKCMB_la*.fits
+    planck: /project/projectdirs/sobs/v4_sims/mbs/201909_highres_foregrounds_extragalactic_planck_deltabandpass/4096/*/0000/planck_deltabandpass_*_uKCMB_planck*.fits
+    planck_noise: /project/projectdirs/cmb/data/planck2018/ffp10/mc_noise/*/ffp10_noise_*[0-9]_full_map_mc_00000.fits
+  components:
+    - cmb
+    - tsz
+    - ksz
+    - cib
+    - dust
+    - synchrotron
+    - freefree
+    - ame
+    - noise
+weights:
+  gal_mask: /global/cscratch1/sd/krach/SObs/FGawg/masks/040619/4096/mask_equatorial_temperature_fsky0p70_freq145_ns4096.fits
+  hits_map: /global/homes/d/dpoletti/software_home/mapsims/mapsims/data/total_hits_LA_classical.fits.gz  # replace 
+  rel_threshold: 0.1
+  apo_deg: 2
+  tag: t_fsky0p70_classical_thr0p1_apo2
+  lat_lim: [-65.0, 20.0]
+lmax: 8000
+outdir: workspace/cache
+logging_level: INFO
