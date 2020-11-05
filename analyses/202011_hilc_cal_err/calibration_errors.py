@@ -12,6 +12,50 @@ BIN_WIDTH = 20
 FIELDS = 'TT EE BB'.split()
 FSKY = 0.3922505853468785  # mean(w^2) / mean(w^4)
 
+def get_bias(delta, field, freqs=v3.Simons_Observatory_V3_LA_bands()):
+    """ Post-HILC CMB bias
+
+    Parameters
+    ----------
+    delta: array
+        Array of shape (..., ell, freq) -- or boadcastable to it. The SED of the
+        CMB is modeled as flat and equal to 1 (K_CMB units). However, we assume
+        that the actual response to the CMB in the data is (1 + delta). The
+        array delta can specifys these correction for each fequency and/or
+        scales. Examples of shapes,
+        * (6,) or (1, 6) -> scale independent, frequency-specific correction
+        * (200, 1) -> frequency-independent, scale-specific correction
+        * (1000, 200, 6)
+          Stack of 1000 correction factors that are scale- and
+          frequency-specific
+        Note: the size of the ell dimension is hardcoded and equal to 200. Run
+        get_bias(0, 'TT') to get the reference ell for each index
+
+    field: str
+        Either TT, EE or BB
+
+    Result
+    _____
+    bias: array
+        Bias of the reconstructed CMB at each scale.
+        Same shape as delta except for the frequency dimension.
+
+    """
+    invN = get_invN(freqs, field)  # (ell, freq, freq)
+
+    cmb_dot_cmb = invN.sum((-1, -2))
+    cmb_dot_delta = np.einsum('...lf,...lfn->...l', delta, invN)
+    delta_dot_delta = np.einsum('...lf,...lfn,...ln->...l',
+                                delta, invN, delta)
+
+    data = np.load(CMB_SPECTRA_LOCAL)
+    cmb_ps = data[field]
+    ells = data['ells']
+    numerator = 1 + cmb_dot_delta / cmb_dot_cmb
+    denominator = 1 + cmb_ps * (delta_dot_delta - cmb_dot_delta**2 / cmb_dot_cmb)
+    return ells, numerator, denominator
+
+
 def _import_get_alm():
     import os
     dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -19,6 +63,7 @@ def _import_get_alm():
     from hilc import get_alms
     os.chdir(dir_path)
     return get_alms
+
 
 def _create_cached_noise_matrix():
     logging.getLogger().setLevel(logging.INFO)
@@ -58,6 +103,7 @@ def _create_cached_noise_matrix():
     )
     logging.info('Saved')
 
+
 def _create_cached_cmb_spectrum():
     get_alms = _import_get_alm()
     binned_cls = []
@@ -85,27 +131,15 @@ def _create_cached_cmb_spectrum():
 
 def get_invN(freqs, field):
     try:
-        assert get_invN.freqs == freqs
+        assert np.all(get_invN.freqs == freqs)
+        assert field in get_invN.invN
     except (AttributeError, AssertionError):
         get_invN.freqs = freqs
         data = np.load(NOISE_COV_MATRIX_LOCAL)
-        tot_freqs = list(data['freqs'].astype(int))
+        tot_freqs = list(data[f'freq_{field}'].astype(int))
         freq_idx = np.array([tot_freqs.index(f) for f in freqs])
-        N = data[FIELDS[field]][freq_idx][:, freq_idx]
-        get_invN.invN = fgb.separation_recipes._regularized_inverse(N)
-    return get_invN.invN
-
-
-def get_bias(delta, freqs=v3.Simons_Observatory_V3_LA_bands()[0]):
-    invN = fgb.separation_recipes._regularized_inverse(
-        np.load(NOISE_COV_MATRIX_LOCAL))
-
-    cmb_dot_cmb = invN.sum((-1, -2))
-    cmb_dot_delta = (delta[None] @ invN.sum(-1))[..., 0]
-    delta_dot_delta = (delta[None] @ invN @ delta[..., None])[..., 0, 0]
-
-    cmb_ps = np.load(CMB_SPECTRA_LOCAL)
-    numerator = 1 + cmb_dot_delta / cmb_dot_cmb
-    denominator = 1 + cmb_ps * (delta_dot_delta - cmb_dot_delta**2 / cmb_dot_cmb)
-    return numerator, denominator
-
+        N = data[field][freq_idx][:, freq_idx]
+        if not hasattr(get_invN, 'invN'):
+            get_invN.invN = {}
+        get_invN.invN[field] = fgb.separation_recipes._regularized_inverse(N.T)
+    return get_invN.invN[field]
