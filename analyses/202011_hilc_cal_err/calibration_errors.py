@@ -5,7 +5,7 @@ import v3_calc as v3
 import logging
 
 ALMS_NERSC = '../../releases/202006_hilc_on_planck_so/workspace/cache/alms_{comp}.h5'
-NOISE_COV_MATRIX_LOCAL = 'fg.npz'
+NOISE_COV_MATRIX_LOCAL = 'fg_noise.npz'
 CMB_SPECTRA_LOCAL = 'cmb.npz'
 LMAX = 4000
 BIN_WIDTH = 20
@@ -28,7 +28,7 @@ def _create_cached_noise_matrix():
     for field in range(3):
         alms, freq = get_alms(
             field, ALMS_NERSC,
-            'tsz ksz cib synchrotron freefree ame dust'.split(),
+            'tsz ksz cib synchrotron freefree ame dust noise'.split(),
             'so planck'.split(),
             lmax=LMAX
         )
