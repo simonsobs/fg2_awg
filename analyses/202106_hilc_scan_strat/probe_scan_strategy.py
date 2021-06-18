@@ -33,6 +33,7 @@ from glob import glob
 import numpy as np
 import logging
 import yaml
+import matplotlib.pyplot as plt
 
 import healpy as hp
 import pysm3.units as u
@@ -41,6 +42,14 @@ import fgbuster as fgb
 #FIXME: load these data from mapsims
 FREQUENCIES_SO = '27, 39, 93, 145, 225, 280'.split(', ')
 BEAMS_SO = [7.4, 5.1, 2.2, 1.4, 1.0, 0.9]
+FREQ_TAG_SO = {
+    '27': 'LF1',
+    '39': 'LF2',
+    '93': 'MFF1',
+    '145': 'MFF2',
+    '225': 'UHF1',
+    '280': 'UHF2',
+}
 
 FREQUENCIES_PLANCK = '30, 44, 70, 100, 143, 217, 353, 545, 857'.split(', ')
 BEAMS_PLANCK = [33.102652125, 27.94348615, 13.07645961, 9.682, 7.303, 5.021,
@@ -49,6 +58,8 @@ BEAMS_PLANCK = [33.102652125, 27.94348615, 13.07645961, 9.682, 7.303, 5.021,
 FREQUENCIES = FREQUENCIES_SO + FREQUENCIES_PLANCK
 BEAMS = BEAMS_SO + BEAMS_PLANCK
 
+THRESHOLD_WEIGHTS = 1e-4
+
 
 def _make_parent_dir_if_not_existing(filename):
     dirname = op.dirname(filename)
@@ -56,8 +67,52 @@ def _make_parent_dir_if_not_existing(filename):
         logging.info(f"Creating the folder {dirname} for {filename}")
         os.makedirs(dirname)
 
-def get_weights():
-    return
+def get_weights(workspace_run=None, nside=None, hits_map=None, gal_mask=None, rel_threshold=None, **kw):
+    if not (hits_map and gal_mask):
+        return np.ones(hp.nside2npix(nside))
+
+    if workspace_run is None:
+        logging.warning(f"Not loading/storing the weights")
+    else:
+        weights_file = op.join(workspace_run, 'weights.fits')
+        if op.exists(weights_file):
+            logging.info(f"Loading weights {weights_file}")
+            return hp.read_map(weights_file)
+
+    logging.info("Computing weights")
+
+    mask_gal = hp.read_map(gal_mask) > 0.
+    hits = hp.read_map(hits_map)
+    if nside is None:
+        nside = hp.get_nside(hits)
+    elif hp.get_nside(hits) != nside:
+        # upgrading with map2alm + alm2map is smoother than ud_grade
+        hits = hp.map2alm(hits, iter=5)
+        hits = hp.alm2map(hits, nside)
+    mask_hits = hits > rel_threshold * hits.max()
+
+    if hp.get_nside(mask_gal) != nside:
+        mask_gal = hp.ud_grade(mask_gal, nside)
+        
+    mask = mask_gal * mask_hits
+    lat_lim = kw.get('lat_lim')
+    if lat_lim:
+        lat = hp.pix2ang(nside, np.arange(hp.nside2npix(nside)), lonlat=True)[1]
+        mask *= (lat > lat_lim[0]) * (lat < lat_lim[1])
+
+    apo_deg = kw.get('apo_deg')
+    weights = hp.smoothing(mask.astype(float), np.radians(apo_deg))
+    weights *= weights > THRESHOLD_WEIGHTS
+    
+    if workspace_run:
+        logging.info(f"Saving weights {weights_file}")
+        _make_parent_dir_if_not_existing(weights_file)
+        hp.write_map(weights_file, weights)
+        hp.mollview(weights, title='Weights')
+        plt.savefig(weights_file.replace('.fits', '.pdf'))
+        plt.close()
+
+    return weights
 
 def _so_or_planck_freq(freq):
     if freq in FREQUENCIES_SO:
@@ -75,7 +130,7 @@ def _so_or_planck_freq(freq):
 def prepare_and_get_signal_map_file(freq, comps, paths, workspace):
     comps = [c for c in comps if c != 'noise']
     cached = op.join(
-        f"{workspace}/inputs/{'_'.join(sorted(comps))}/map_{freq:0<3}_GHz.fits")
+        f"{workspace}/inputs/{'_'.join(sorted(comps))}/map_{freq:0>3}_GHz.fits")
     if op.exists(cached):
         return cached
 
@@ -84,10 +139,10 @@ def prepare_and_get_signal_map_file(freq, comps, paths, workspace):
     stack = None
     for comp in comps:
         comp_file = paths[_so_or_planck_freq(freq)]
-        comp_file = [f for f in glob(comp_file.replace('*', comp+'*', 2))
-                     if f'{freq:0<3}' in f]
-        assert len(comp_file) == 0, (
-            "{len(comp_file)} matches for {freq} {comp}")
+        comp_file = [f for f in glob(comp_file.replace('*', comp, 1))
+                     if f'{freq:0>3}' in f or FREQ_TAG_SO.get(freq, 'None') in f]
+        assert len(comp_file) == 1, (
+            f"{len(comp_file)} matches for {freq} {comp}")
         comp_file = comp_file[0]
         logging.info(f" - Reading {comp_file}")
         if stack is None:
@@ -130,8 +185,8 @@ def _file2alm(weights, lmax, fwhm, map_file):
     nside = hp.get_nside(weights)  # NOTE: the weights define the nside
     if nside_map != nside:
         logging.warning(
-            f"Maps have nside {nside} but weights have nside "
-            f"{nside_weights}. ud_grading the former to the latter")
+            f"Maps have nside {nside_map} but weights have nside "
+            f"{nside}. ud_grading the former to the latter")
         maps = hp.ud_grade(maps, nside)
     
     if lmax > 3 * nside - 1:
@@ -170,7 +225,7 @@ def _file2alm(weights, lmax, fwhm, map_file):
 
 def get_noise_alms(hdu, freq, weights, lmax, paths, workspace_run):
     cached = op.join(
-        f"{workspace_run}/inputs/noise/alm_{freq:0<3}_GHz.fits")
+        f"{workspace_run}/inputs/noise/alm_{freq:0>3}_GHz.fits")
     try:
         logging.info(f"Reading {cached}")
         return hp.read_alm(cached, hdu)
@@ -180,13 +235,23 @@ def get_noise_alms(hdu, freq, weights, lmax, paths, workspace_run):
     experiment = _so_or_planck_freq(freq)
     fwhm = BEAMS[FREQUENCIES.index(freq)]
     if experiment == 'so':
-        NotImplementedError("Scan strategy stuff")
+        noise_file = paths['so_noise']
+        if 'wcov.fits' in noise_file:
+            raise NotImplementedError("unclear how to rescale noise at diff freq") 
+        else:
+            noise_file = [f for f in glob(noise_file.replace('*', 'noise', 1))
+                          if f'{freq:0>3}' in f or FREQ_TAG_SO[freq] in f]
+            assert len(noise_file) == 1, (
+                f"{len(noise_file)} matches for {freq} noise")
+            noise_file = noise_file[0]
+            alm = _file2alm(weights, lmax, fwhm, noise_file)
+            _boost_ell_lt_30(alm)
     else:
         noise_file = paths['planck_noise']
         noise_file = [f for f in glob(noise_file.replace('*', 'noise', 1))
-                      if f'{freq:0<3}' in f]
-        assert len(noise_file) == 0, (
-            "{len(noise_file)} matches for {freq} {comp}")
+                      if f'{freq:0>3}' in f]
+        assert len(noise_file) == 1, (
+            f"{len(noise_file)} matches for {freq} {comp}")
         noise_file = noise_file[0]
         alm = _file2alm(weights, lmax, fwhm, noise_file)
         _planck_noise_to_C_and_uKCMB(alm, freq)
@@ -195,7 +260,7 @@ def get_noise_alms(hdu, freq, weights, lmax, paths, workspace_run):
     _make_parent_dir_if_not_existing(cached)
     hp.write_alm(cached, alm)
 
-    return alm[hdu-1]
+    return alm[np.array(hdu)-1]
 
 
 def _boost_ell_lt_30(alm):
@@ -206,17 +271,9 @@ def _boost_ell_lt_30(alm):
     alm[..., idx] *= (3 / (1 + np.exp(l - 30)) + 1) * (l/30)**(-2)
 
 
-def _get_scan_tag(**scan_kw):
-    return None
-
-
-def _get_weights(**scan_kw):
-    return None
-
-
 def get_alm(hdu, freq, weights, lmax, comps, paths, workspace_run, workspace):
     cached = op.join(
-        f"{workspace_run}/inputs/{'_'.join(sorted(comps))}/alm_{freq:4d}.fits")
+        f"{workspace_run}/inputs/{'_'.join(sorted(comps))}/alm_{freq:0>3}.fits")
     try:
         logging.info(f"Reading {cached}")
         return hp.read_alm(cached, hdu=hdu)
@@ -234,11 +291,11 @@ def get_alm(hdu, freq, weights, lmax, comps, paths, workspace_run, workspace):
     _make_parent_dir_if_not_existing(cached)
     hp.write_alm(cached, alm)
 
-    return alm[hdu-1]
+    return alm[np.array(hdu)-1]
 
 
 def get_all_alm(hdu, freqs, weights, lmax, comps, paths, workspace_run, workspace):
-    shape = freqs.shape + np.array(hdu).shape + (hp.Alm.getsize(lmax),)
+    shape = (len(freqs),) + np.array(hdu).shape + (hp.Alm.getsize(lmax),)
     alms = np.zeros(shape, dtype=np.complex128)
     for alm, freq in zip(alms, freqs):
         alm[:] = get_alm(hdu, freq, weights, lmax, comps,
@@ -279,16 +336,16 @@ def main():
     with open(sys.argv[1], 'r') as stream:
         params = yaml.safe_load(stream)
 
-    workspace_run = f"{params['workspace']}/runs/{_get_scan_tag(params['scan'])}"
+    workspace_run = f"{params['workspace']}/runs/{params['scan']['tag']}"
     set_logfile(f"{workspace_run}/run.log", params['logging_level'])
     logging.info(f"PARAMETERS READ\n\n{yaml.dump(params)}\n\n")
 
-    weights = get_weights(params['scan'], workspace_run)
+    weights = get_weights(workspace_run, params['nside'], **params['scan'])
 
     freqs = []
-    if 'so' in params['instruments']:
+    if 'so' in params['inputs']['instruments']:
         freqs += FREQUENCIES_SO
-    if 'planck' in params['instruments']:
+    if 'planck' in params['inputs']['instruments']:
         freqs += FREQUENCIES_PLANCK
 
     # HILC
@@ -296,8 +353,8 @@ def main():
     for hdu in range(1, 4):  # Avoid loading TEB at the same time
         logging.info(f'Stokes {hdu}/3')
         alms = get_all_alm(
-            hdu, freqs, weights, params['lmax'], params['components'],
-            params['input'], workspace_run, params['workspace'])
+            hdu, freqs, weights, params['lmax'], params['inputs']['components'],
+            params['inputs']['paths'], workspace_run, params['workspace'])
         instrument = fgb.observation_helpers.standardize_instrument(
             {'frequency': np.array(freqs).astype(float)})
         logging.info('Do ILC')

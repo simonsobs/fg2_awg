@@ -1,0 +1,35 @@
+inputs:
+  paths:
+    #so_noise: /global/cfs/cdirs/sobs/sims/scan-s0001/high_cadence_constant_scan_1_el_telescope_all_time_all_wcov.fits
+    so_noise: /project/projectdirs/sobs/v4_sims/mbs/201906_noise_no_lowell/4096/noise/0000/simonsobs_*_uKCMB_la*.fits
+    so: /project/projectdirs/sobs/v4_sims/mbs/201906_highres_foregrounds_extragalactic_tophat/4096/*/0000/simonsobs_*_uKCMB_la*.fits
+    planck: /project/projectdirs/sobs/v4_sims/mbs/201909_highres_foregrounds_extragalactic_planck_deltabandpass/4096/*/0000/planck_deltabandpass_*_uKCMB_planck*.fits
+    planck_noise: /project/projectdirs/cmb/data/planck2018/ffp10/mc_noise/*/ffp10_noise_*[0-9]_full_map_mc_00000.fits
+  instruments:
+    - so
+    - planck
+  components:
+    - cmb
+    - tsz
+    #- ksz
+    #- cib
+    #- dust
+    #- synchrotron
+    #- freefree
+    #- ame
+    - noise
+scan:
+  gal_mask: /global/cscratch1/sd/krach/SObs/FGawg/masks/040619/4096/mask_equatorial_temperature_fsky0p70_freq145_ns4096.fits
+  #hits_map: /global/cfs/cdirs/sobs/sims/scan-s0001/high_cadence_constant_scan_1_el_telescope_all_time_all_wcov.fits
+  hits_map: /global/homes/d/dpoletti/software_home/mapsims/mapsims/data/total_hits_LA_classical.fits.gz  # replace 
+  rel_threshold: 0.1
+  apo_deg: 2
+  #tag: t_fsky0p70_high_cadence_constant_scan_1_el_telescope_thr0p1_apo2
+  tag: t_fsky0p70_classical_thr0p1_apo2
+  lat_lim: [-65.0, 20.0]
+hilc:
+  lbins: [0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330, 360, 390, 420, 450, 480, 510, 540, 570, 600, 630, 660, 690, 720, 750, 780, 810, 840, 870, 900, 930, 960, 990]
+workspace: workspace/
+nside: 512
+lmax: 1020
+logging_level: INFO
