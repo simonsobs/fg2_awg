@@ -25,6 +25,6 @@ strategies="$strategies small_tiles_telescope"
 for strategy in $strategies; do
     echo $strategy
     #srun -n 1 -c 64 --cpu_bind=cores python probe_scan_strategy.py config_hilc_scan_strat.yaml $strategy &
-    python probe_scan_strategy.py config_hilc_scan_strat_hits_weights.yaml $strategy
+    python probe_scan_strategy.py config_hilc_scan_strat.yaml $strategy
 done
 wait
