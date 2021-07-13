@@ -16,7 +16,7 @@ The scanning strategy being used can be configured.
   - SO
   - SO + Planck (not on disk)
   - Planck (not on disk)
-* $y$ map (not on disk)
+* y map (not on disk)
 * alms and maps of input and output stored
 
 See the `probe_scan_strategy.py` header for the output structure.
