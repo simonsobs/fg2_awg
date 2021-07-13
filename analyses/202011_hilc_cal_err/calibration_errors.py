@@ -21,7 +21,7 @@ def get_bias(delta, field, freqs=v3.Simons_Observatory_V3_LA_bands()):
         Array of shape (..., ell, freq) -- or boadcastable to it. The SED of the
         CMB is modeled as flat and equal to 1 (K_CMB units). However, we assume
         that the actual response to the CMB in the data is (1 + delta). The
-        array delta can specifys these correction for each fequency and/or
+        array delta can specify these correction for each fequency and/or
         scales. Examples of shapes,
         * (6,) or (1, 6) -> scale independent, frequency-specific correction
         * (200, 1) -> frequency-independent, scale-specific correction
